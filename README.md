@@ -54,7 +54,7 @@ flowchart TD
 ```
 #
 
-⚙️ Step 1 — pfSense Installation & Configuration
+<details><summary>⚙️ Step 1 — pfSense Installation & Configuration</summary>
 
 | Setting | Value                  |
 | :------ | :--------------------- |
@@ -65,7 +65,7 @@ flowchart TD
 | NIC 1   | WAN (Bridged or NAT)   |
 | NIC 2   | LAN (Internal Network) |
 
-<details><summary>1.2 **🧱 Installing pfSense on VirtualBox**</summary>
+<details><summary>1.2 🧱 Installing pfSense on VirtualBox</summary>
 
 
 
@@ -134,48 +134,198 @@ https://192.168.1.1
 
 Default credentials:
 
-#
-#
+
 
 </details>
 
-<details><summary># 1.3 **Hardening**</summary>
+<details><summary>1.3 Disable Hardware Offloading (Required for Suricata)</summary>
 
-Disable hardware offloading (required for Suricata):
-System → Advanced → Networking
 
-Uncheck Hardware Checksum/TCP Segmentation/Large Receive Offloading.
-Save and reboot.
+**In pfSense GUI:**
 
-1.4 Image Placeholder
 
-🕵️ Step 2 — Install Suricata on pfSense
-2.1 Package Install
+Go to: System → Advanced → Networking
 
-System → Package Manager → Available Packages → install suricata.
 
-2.2 Interface Setup
+*Check and enable:*
 
-Services → Suricata
+-✅ Disable hardware checksum offloading
 
-Add interface: LAN (em1)
+-✅ Disable hardware TCP segmentation offloading
 
-Mode: IDS (alert-only) → later IPS.
+-✅ Disable hardware large receive offloading
 
-Home Net: 192.168.1.0/24
 
-External Net: !$HOME_NET
+<img width="1138" height="312" alt="Screenshot 2025-11-11 110622" src="https://github.com/user-attachments/assets/1bc0bb61-7098-4224-9046-51c285607920" />
 
-2.3 EVE JSON Logging
+Save & apply.
+</details>
 
-Logging Settings
+</details>
 
-Enable EVE JSON.
+#
 
-Log types: alert, dns, http, ssh, tls, flow.
+<details> <summary>🕵️ Step 2 — Install Suricata on pfSense
+</summary> 
 
-2.4 Rules
+<details><summary>2.1 — Install Suricata</summary>
 
-Enable ET Open ruleset → detect brute-force, malware, policy violations.
 
-2.5 Image Placeholder
+1. Navigate to **System → Package Manager → Available Packages**  
+2. Search for `suricata`  
+3. Click **Install**  
+<img width="1026" height="317" alt="Screenshot 2025-11-11 112601" src="https://github.com/user-attachments/assets/93c6e852-d9e0-4b1d-8c7f-180823cd6681" />
+
+---
+</details>
+<details><summary>Step 2.2 — Configure Suricata</summary>
+
+1. Go to **Services → Suricata**
+2. Click **+ Add Interface**
+   - **Interface:** LAN  
+   - **Enable:** ✅
+3. Under **Global SettingsS:**
+   - Enable **ET Open (Emerging Threats)** ruleset → detect brute-force, malware, policy violations.
+     <img width="695" height="326" alt="Screenshot 2025-11-11 113257" src="https://github.com/user-attachments/assets/cf29d257-f73b-403d-bda8-885c2bd36672" />
+
+4. Click **Save** and **Start Suricata**
+
+
+**2.3 Enable EVE JSON and Syslog Logging**
+
+1. In Services → Suricata → Interfaces → [LAN] → EVE Output:
+    - Enable EVE JSON output
+    - Check event types as needed:
+      ` alert` `dns` `http` `tls` `ssh` `fileinfo` `etc`
+
+2. Then, configure pfSense to send system logs to Splunk via syslog:
+
+      - Go to Status → System Logs → Settings
+      - Under Remote Logging Options:
+
+       - ✅ Send log messages to remote syslog server
+       - ✅ Remote syslog server: 192.168.10.50:514 (replace with your SIEM IP)
+       - ✅ Syslog Facility: local4 (or similar)
+`Save.`
+
+At this point, pfSense and Suricata are ready to send logs to Splunk.
+
+<img width="1141" height="721" alt="Screenshot 2025-11-11 114659" src="https://github.com/user-attachments/assets/48e53b5d-2ae5-4fe4-9067-8b77aebb43b3" />
+
+</details>
+
+</details>
+
+#
+
+<details><summary> 📊 Step 3.Splunk Setup</summary>
+
+
+
+<details><summary>✅ 3.1 Download Splunk</summary>
+  
+✅ 1. Download Splunk
+For Linux (DEB):
+- Visit the Splunk download page. ``https://www.splunk.com/en_us/download``
+- Sign-in or create an account and it would give you access to the download page.
+
+Choose the version for Linux (RPM/DEB) depending on your system architecture:
+
+But for this Project I will be using DED for Debian-based systems (Ubuntu, etc.)
+
+![Screenshot 2025-07-04 175645](https://github.com/user-attachments/assets/d8ecdf25-4465-4f13-bcd2-90a87963ba22)
+
+
+DEB-based (Ubuntu, Debian):
+- Open a terminal. 
+- Paste the deb command you copied : ``  sudo wget -O splunkforwarder-9.4.3-237ebbd22314-linux-amd64.deb "https://download.splunk.com/products/universalforwarder/releases/9.4.3/linux/splunkforwarder-9.4.3-237ebbd22314-linux-amd64.deb" ``
+- 
+![Screenshot 2025-07-04 175245](https://github.com/user-attachments/assets/388c59c9-e090-4a7c-8e9e-9a2c952ff58f)
+
+  
+- Install the downloaded .deb package using dpkg. `` sudo dpkg -i ``
+</details>
+
+<details><summary>✅ 3.2 Start Splunk</summary>
+Linux:
+1. After installation, you need to start Splunk from the command line. Go to the directory where Splunk is installed:
+
+``cd /opt/splunk/bin``
+
+2. Start Splunk:
+
+   ``sudo ./splunk start --accept-license``
+
+  - Important: The --accept-license flag ensures that you accept the Splunk license agreement.
+
+  - Splunk will prompt you to create a username and password for the admin account.
+
+    #
+✅ Access Splunk Web Interface
+
+Once Splunk is running, you can access the web interface to start configuring and using Splunk.
+
+Open a web browser and navigate to:
+
+For local installation: http://localhost:8000
+
+For remote installation: http://<server-ip>:8000
+
+You should be prompted to log in with the admin username and password you created during the installation process.
+
+ ![Screenshot 2025-07-04 194003](https://github.com/user-attachments/assets/0be0b141-9aea-4303-91fe-d476bc38fa2b)
+
+
+</details>
+
+</details>
+
+
+<details><summary>🧩 STEP 4 — Configure Data Inputs in Splunk</summary>
+
+4.1 ▶ Add UDP Syslog Input (for pfSense / Suricata) In Splunk:
+
+  - Settings → Data Inputs → UDP → New Local UDP
+  - Port: 514
+  - Source type: syslog
+  - Index: pfsense (create it if needed)
+  - Save.
+
+
+
+
+
+▶ Enable HTTP Event Collector (HEC)
+
+This will be used by n8n later.
+
+Go to Settings → Data Inputs → HTTP Event Collector
+
+Click Global Settings:
+
+✅ Enable HTTP Event Collector
+
+Port: 8088
+
+TLS: up to you (for lab, HTTP is fine on local network)
+
+Create a token:
+
+Name: n8n-soar
+
+Source type: json
+
+Index: soar (or another dedicated index)
+
+Save and copy the Token Value (e.g. 6a12a0b1-3b99-4aef-824f-123456789abc)
+
+🔍 4. Verify pfSense → Splunk Logs
+
+Run this search in Splunk:
+
+index=pfsense | stats count by host sourcetype
+
+
+You should see logs from pfSense (and Suricata if you log via syslog).
+
+</details>
