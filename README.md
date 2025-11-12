@@ -392,5 +392,22 @@ export AZURE_CLIENT_SECRET="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 export SPLUNK_IP="192.xxx.xxx.xxx"
 export HEC_TOKEN="your_splunk_token"
 ````
-*Make sure to replace the value for the all the token*
+*Make sure to replace the value for all the tokens*
+
+Then run:
+```
+curl -s -H "Authorization: SSWS $OKTA_API_KEY" \
+     "https://$OKTA_ORG/api/v1/logs?since=$(date -u -d '10 minutes ago' +%Y-%m-%dT%H:%M:%SZ)" \
+| jq -c '.[]' \
+| while read -r evt; do
+    jq -n --argjson e "$evt" '{event:$e}' \
+    | curl -s -H "Authorization: Splunk '"$HEC_TOKEN"'" \
+           -H "Content-Type: application/json" \
+           -d @- "http://$SPLUNK_IP:8088/services/collector/event"
+  done
+```
+*That streams your Okta System Log events directly into Splunk.*
+
 </details>
+
+
