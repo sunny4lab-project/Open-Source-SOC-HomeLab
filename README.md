@@ -375,6 +375,22 @@ On the collector VM:
 
 
 
+5.4 Pull Okta logs and forward to Splunk
 
+Create an environment variable file or export them manually:
+```bash
+# --- Okta variables ---
+export OKTA_DOMAIN=""dev-987654.okta.com""
+export OKTA_API_TOKEN="your_okta_token"
 
+# --- Microsoft Entra / Azure AD variables ---
+export AZURE_TENANT_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+export AZURE_CLIENT_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+export AZURE_CLIENT_SECRET="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# --- Splunk variables ---
+export SPLUNK_IP="192.xxx.xxx.xxx"
+export HEC_TOKEN="your_splunk_token"
+````
+*Make sure to replace the value for the all the token*
 </details>
