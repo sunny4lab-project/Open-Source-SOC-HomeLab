@@ -280,6 +280,7 @@ You should be prompted to log in with the admin username and password you create
 
 </details>
 
+#
 
 <details><summary>🧩 STEP 4 — Configure Data Inputs in Splunk</summary>
 
@@ -327,5 +328,53 @@ index=pfsense | stats count by host sourcetype
 
 
 You should see logs from pfSense (and Suricata if you log via syslog).
+
+</details>
+
+#
+
+<details><summary>👤 Step 5 — Integrate Okta & Microsoft Entra ID</summary>
+  
+5.1 Create an API token
+
+  1. Sign in as an Okta admin → Security → API → Tokens
+     <img width="1414" height="67" alt="Screenshot 2025-11-11 235839" src="https://github.com/user-attachments/assets/61b69846-9db1-4305-a93b-e69be7f49c0e" />
+<img width="297" height="568" alt="Screenshot 2025-11-11 230526" src="https://github.com/user-attachments/assets/db0e49dd-e085-4a48-bf9a-6709c1a9c527" />
+<img width="557" height="208" alt="Screenshot 2025-11-11 230557" src="https://github.com/user-attachments/assets/587a69d0-d4b4-4ff1-a4dd-a9d27d228404" />
+
+  3. Click Create Token, give it a name (e.g., SplunkCollector), copy the token value once.
+      Example: `00abCDeFGhijkLmNOPQrsTuVWXYZ1234567890`
+<img width="473" height="366" alt="Screenshot 2025-11-11 230638" src="https://github.com/user-attachments/assets/f035b44a-c167-4422-9357-2f115ea0d468" />
+
+
+*Store it safely; that’s your $OKTA_API_KEY.*
+
+
+5.2 Enable Splunk HTTP Event Collector (HEC)
+
+In Splunk Web → Settings → Data Inputs → HTTP Event Collector → New Token
+
+   - Name: `okta-logs`
+   - Source Type: `json`
+   - Index: `okta`
+   - Copy the HEC token (e.g., `3E6A4E…`)
+   - Ensure HEC is enabled and note the port (8088).
+   - 
+<img width="467" height="529" alt="Screenshot 2025-11-11 230905" src="https://github.com/user-attachments/assets/0f04cd5f-6476-44e8-b01e-0b9bfb115c68" />
+
+
+✅ 5.3 Test connectivity
+
+
+On the collector VM:
+
+         curl -s -H "Authorization: Splunk <YOUR_HEC_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{"event":"okta test"}' \
+     http://<splunk_ip>:8088/services/collector/event
+
+
+
+
 
 </details>
