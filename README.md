@@ -410,6 +410,8 @@ curl -s -H "Authorization: SSWS $OKTA_API_KEY" \
 
 </details>
 
+#
+
 <details><summary>⚙️ Step 6 — Installing and setting up n8n SOAR with PostgreSQL Persistence</summary>
 
 
@@ -530,8 +532,12 @@ Save with: ``CTRL + O``, ``ENTER``, ``CTRL + X``.
 
 Example:
 
-Local VM: http://192.168.1.119:5678
-Cloud VM: http://34.128.xx.xx:5678
+- Local VM: http://192.168.1.119:5678
+- Cloud VM: http://34.128.xx.xx:5678
 
 </details>
+
+# 
+
+
 </details>
