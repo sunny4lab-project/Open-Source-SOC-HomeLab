@@ -410,4 +410,128 @@ curl -s -H "Authorization: SSWS $OKTA_API_KEY" \
 
 </details>
 
+<details><summary>⚙️ Step 6 — Installing and setting up n8n SOAR with PostgreSQL Persistence</summary>
 
+
+<img width="225" height="131" alt="image" src="https://github.com/user-attachments/assets/7e862066-8a81-4901-9622-d3329c8876ac" />
+
+
+n8n is an open-source automation platform that allows you to build powerful SOC workflows without writing code.
+It acts as a lightweight SOAR (Security Orchestration, Automation, and Response) tool for your homelab.
+
+#
+
+n8n uses a visual workflow builder, supports hundreds of integrations, and runs fully self-hosted, making it perfect for:
+
+- SOC HomeLab environments
+
+- Cybersecurity automation projects
+
+- Incident response pipelines
+
+- Threat enrichment workflows
+  
+* This project walks you through deploying n8n in your SOC lab and connecting it with your detection tools.*
+  
+#
+🔧 Prerequisites
+
+  You must have the following installed:
+
+✓ Docker
+✓ Docker Compose v2
+
+*These run n8n and PostgreSQL as containers.*
+
+<details><summary>🔹 Step 6.1 — Create n8n Project Folder</summary>
+
+1. Create a new directory :
+   `` mkdir n8n-stack
+      cd n8n-stack``
+
+2. Create docker-compose.yml
+
+``sudo nano docker-compose.yml``
+
+paste this : 
+
+```
+  version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=n8npassword
+      - POSTGRES_DB=n8n
+    volumes:
+      - n8n_postgres_data:/var/lib/postgresql/data
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "5678:5678"
+    environment:
+      # Basic login
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=changeme
+
+      # Encryption key for credentials
+      - N8N_ENCRYPTION_KEY=supersecretkey123
+
+      # Database settings
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8npassword
+
+      # External URL
+      - N8N_EDITOR_BASE_URL=https:// Replace this with your Tunnel URL
+      - GENERIC_TIMEZONE=America/Chicago
+      - WEBHOOK_URL=https:// Replace this with your Tunnel URL
+      - WEBHOOK_TUNNEL_URL=https:// Replace this with your Tunnel URL
+
+
+      # API keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
+      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+
+
+      - N8N_HOST= Replace this with your Tunnel URL
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL= Replace this with your Tunnel URL
+
+volumes:
+  n8n_postgres_data: 
+```
+
+Save with: ``CTRL + O``, ``ENTER``, ``CTRL + X``.
+
+
+3. Inside the n8n-stack folder:
+
+``docker compose up -d``
+
+4. 🔹 Access n8n
+   
+      ``http://<your-server-ip>:5678``
+
+Example:
+
+Local VM: http://192.168.1.119:5678
+Cloud VM: http://34.128.xx.xx:5678
+
+</details>
+</details>
