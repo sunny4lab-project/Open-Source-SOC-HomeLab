@@ -167,6 +167,17 @@ Save & apply.
 
 <details> <summary>🕵️ Step 2 — Install Suricata on pfSense
 </summary> 
+  
+  #
+  
+🛡️ Installing Suricata IDS on pfSense — Introduction
+
+Suricata is a powerful, open-source Intrusion Detection System (IDS) and Intrusion Prevention System (IPS) used by security teams to detect malicious network activity in real time. When combined with pfSense — a lightweight, firewall-focused OS — you get a strong, open-source network defense stack suitable for home labs, SOC simulations, and enterprise-level security monitoring.
+
+This guide walks you through installing and configuring Suricata directly on a pfSense firewall. You’ll learn how to enable IDS/IPS features, apply community threat intelligence (ET Open rules), and prepare Suricata logs for forwarding into your SIEM (Splunk, ELK, or Azure Sentinel). For now we will be focussing on using Splunk.
+
+If you’re building a modern SOC HomeLab or want to learn real-world network security monitoring, Suricata on pfSense is one of the best places to start.
+
 
 <details><summary>2.1 — Install Suricata</summary>
 
@@ -220,6 +231,16 @@ At this point, pfSense and Suricata are ready to send logs to Splunk.
 
 <details><summary> 📊 Step 3.Splunk Setup</summary>
 
+
+# 
+
+🔎 Installing Splunk for SOC Monitoring — Introduction
+
+Splunk is one of the most widely used SIEM platforms in cybersecurity, powering real-time log analysis, threat detection, visualization, and incident response. In a SOC environment — or a hands-on home lab — Splunk acts as the central intelligence hub where all security data comes together for investigation and monitoring.
+
+This guide walks you through installing Splunk, configuring data inputs, and preparing it to receive logs from tools like Suricata, pfSense, Sysmon, and your attacker VMs. You’ll learn how to enable forwarding, create indexes, install add-ons, and build a foundation for threat detection and correlation.
+
+If you're building a modern SOC HomeLab or want to gain real-world SIEM experience, Splunk is a critical component — and this setup will prepare you for monitoring network attacks, host events, and automated workflows using n8n, TheHive, and other tools in your environment.
 
 
 <details><summary>✅ 3.1 Download Splunk</summary>
@@ -334,7 +355,13 @@ You should see logs from pfSense (and Suricata if you log via syslog).
 #
 
 <details><summary>👤 Step 5 — Integrate Okta & Microsoft Entra ID</summary>
-  
+
+
+  #
+
+ This guide shows you how to send authentication and identity activity logs from Okta and Microsoft Entra ID into Splunk for security monitoring and investigation. By forwarding system logs, sign-in events, MFA activity, and user changes, Splunk becomes your central SIEM for detecting identity-based attacks such as brute force, password spraying, and unauthorized access attempts.
+
+You’ll learn how to enable log exports from both platforms, configure Splunk inputs (Add-ons or HEC), and verify that identity events are being indexed for analysis.
 5.1 Create an API token
 
   1. Sign in as an Okta admin → Security → API → Tokens
@@ -543,152 +570,50 @@ Example:
 </details>
 
 #
-<details><summary>🔹Step 7 Connect Splunk → n8n (Webhook Alert)</summary>
+<details><summary>🔹Step 7🔁 Splunk Integration with n8n</summary>
 
+#
 
+**Automated Alerting, Enrichment & SOAR-Style Workflows**
 
-<details><summary>7.1 Create an n8n Webhook workflow</summary>
-  
-1. Log into n8n UI.
-2. Click “Create Workflow”.
-3. Add a Webhook node:
-<img width="250" height="250" alt="Screenshot 2025-11-19 204349" src="https://github.com/user-attachments/assets/45143e86-4206-4eb3-b520-67626802bb11" />
+📌 Introduction
 
-  - HTTP Method: ``POST``
-  - Path: ``splunk-alert``
-      → This will create a URL like:  ``https://your.n8n.domain.or.ip/webhook/splunk-alert``
-<img width="300" height="400" alt="Screenshot 2025-11-19 205009" src="https://github.com/user-attachments/assets/f2d27d35-08ca-4c8d-a5f5-5c01601a8dd1" />
+This guide walks you through integrating n8n with Splunk using the HTTP Event Collector (HEC). Once connected, n8n can:
 
-  - Authentication: (Optional) ``Header Auth`` or  ``Basic Auth`` if you want to secure it.
+- Send events directly into Splunk
 
-4. Under Webhook → Response:
+- Enrich Splunk alerts using external APIs (VT, OpenAI, AbuseIPDB, etc.)
 
-     - Respond with simple JSON:
-            - Response Mode: Last Node (for now it’s ok) or On Received.
-            - If On Received, set:
+- Trigger automated workflows when Splunk generates alerts
 
+- Build SOAR-style playbooks inside your SOC HomeLab
 
+This integration gives you a lightweight, open-source alternative to commercial SOAR tools — powered entirely by n8n.
 
-Status Code: 200
+#
+#
 
-Response Body: {"status": "received"}
+1️⃣ Enable HTTP Event Collector (HEC) in Splunk
 
-Click “Execute Workflow” once so n8n waits for the first incoming request.
+*Step 1 — Log into Splunk*
 
-We’ll wire the rest of the workflow after we hook Splunk.
+Go to : ``http://<SPLUNK-IP>:8000``
 
+Step 2 — Create a HEC Token
 
-</details>
+Go to:
 
-<details><summary>3.2 Create a Splunk Alert that calls n8n</summary>
+Settings → Data Inputs → HTTP Event Collector → New Token
 
+Use the following:
 
+  - Name: `n8n-automation`
+  - Source type:` _json`
+  - Index: `main` (or create: `automation`)
+  - Enable SSL: Optional for home labs
+<img width="180" height="150" alt="Screenshot 2025-11-22 121832" src="https://github.com/user-attachments/assets/b9b75744-c0be-4a9d-add5-e23b6b2965a4" />
 
+<img width="180" height="150" alt="Screenshot 2025-11-22 121905" src="https://github.com/user-attachments/assets/95d8e591-3a97-426c-8e19-631786c71515" />
 
-Assume you already have Suricata logs, firewall logs, or honeypot logs in Splunk.
-
-Example brute-force/IOC search (simplified):
-
-```index=pfsense event_type=alert
-| stats count by src_ip, dest_ip, signature
-| where count > 10
-```
-
-1. In Splunk Search:
-
-  - Run your correlation search.
-  - Click Save As → Alert.
-
-
-
-2. Configure the Alert:
-
-   - Title: `Brute Force Alert to n8n`
-   - Alert type: Scheduled or Real-time.
-   - Trigger condition: e.g. `If number of results > 0.`
-
-
-
-
-
-3. Under Trigger Actions, add: Webhook (or ``“Custom Alert Action”`` → ``“Webhook”``, depending on your Splunk version / apps).
-
-4. Webhook settings:
-    - URL: https://your.n8n.domain.or.ip/webhook/splunk-alert
-    - Method: POST
-    - HTTP Header (optional):
-        - Content-Type: application/json
-        - `X-Auth-Secret: SLACK_WEBHOOK_SECRET_VALUE` (if you implement header check in n8n).
-
-    - For Payload, send the results as JSON, for example:
-```
- {
-  "search_name": "$name$",
-  "result_count": "$result.count$",
-  "results": $results.json$
-} 
-```
-
-
-
-
-
-
-
-
-
-
-
-(Exact macro names can vary; in many setups results or result macros are available from Splunk for alert payloads.)
-
-Save the alert.
-
-When the alert fires, Splunk will POST data to your n8n Webhook node.
-In n8n, check Webhook node → Output → JSON to see what structure you’re getting (src_ip, dest_ip, signature, etc.). Those keys will be used in the rest of the workflow.
-
-4. Step 2 – Enrich with VirusTotal in n8n
-
-We’ll assume Splunk sends one or more IPs/domains in the payload under results.
-
-4.1 Prepare VirusTotal credentials
-
-In n8n:
-
-Go to Credentials → New.
-
-Search for HTTP Request credentials (we’ll use generic HTTP for VT).
-
-Save a credential like VirusTotal API with:
-
-Authentication: Header Auth
-
-Name: x-apikey
-
-Value: your VT_API_KEY (or reference env var).
-
-4.2 Add a “Set” node to clean the payload
-
-After the Webhook node, add a Set node:
-
-Purpose: Extract one IP or domain from the incoming Splunk alert.
-
-Example:
-
-Add Field → alert_ip.
-
-Value → Expression, something like:
-
-// Example: take first result's src_ip
-$json["results"][0]["src_ip"]
-
-
-Adjust based on the actual structure you see in the Webhook test.
-
-
-
-
-
-
-</details>
-
-
+Save the token → **Copy the Token Value.**
+You’ll need it in n8n.
